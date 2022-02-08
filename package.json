@@ -1,0 +1,22 @@
+{
+  "name": "upload-gsheet",
+  "version": "1.0.0",
+  "description": "Upload data to Google Sheet from repository services",
+  "main": "index.js",
+  "bin": "./index.js",
+  "scripts": {
+    "upload": "node index.js"
+  },
+  "keywords": [
+    "utility"
+  ],
+  "author": "Luighi Viton-Zorrilla",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^8.1.0",
+    "dotenv": "^10.0.0",
+    "googleapis": "^84.0.0",
+    "octokit": "^1.7.1",
+    "winston": "^3.3.3"
+  }
+}
