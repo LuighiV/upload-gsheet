@@ -68,6 +68,16 @@ upload-gsheet [options]
     Specify the service name from which obtain the data to upload.
     The available option is: `github`
 
+* `--github-username <username>`
+
+    Specify the GitHub username to obtain information about repositories.
+    Used when `--service` is `github`.
+
+* `--github-token <token>`
+
+    Specify the GitHub Token to obtain information.
+    Used when `--service` is `github`.
+
 *  `-h, --help` display help for command
 
 From these options, providing the `--sheet-id` is mandatory either via the
@@ -78,7 +88,7 @@ service account, explained above.
 
 In case you are using the script from the source folder, you can call it via:
 ```
-npm run reset -- [options]
+npm run upload -- [options]
 ```
 
 Where `[options]` are the options described above.
@@ -95,4 +105,5 @@ To use this service, it requires some environment variables set:
 | GITHUB_USERNAME | GitHub user to obtain repositories info     |
 
 These variables are required to obtain the user repositories information from
-GitHub.
+GitHub. If not set, this information can also be specified via the command line
+options `--github-token` and `--github-username`, respectively.
