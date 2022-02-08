@@ -13,12 +13,23 @@ function setAuthToken(token) {
   octokit = new Octokit({ auth: token });
 }
 
-async function getRepositories() {
-  const rest = await octokit.request("GET /users/{user}/repos", {
-    user: userName,
+async function getRepositories(per_page = 100, page = 1) {
+  const rest = await octokit.request("GET /users/{username}/repos", {
+    username: userName,
+    per_page: per_page,
+    page: page,
   });
   //console.log(rest);
   return rest;
+}
+
+async function getAllRepositories() {
+  const repos = octokit.paginate(octokit.rest.repos.listForAuthenticatedUser, {
+    username: userName,
+    type: "all",
+  });
+
+  return repos;
 }
 
 async function getOrganizations(populate = ["repos_url"]) {
@@ -79,20 +90,25 @@ async function filterReposUserContribution(listRepos) {
 }
 
 //(async () => {
-//  //res = await getOrganizations();
-//  //repos = res["data"][0]["repos_url"]["data"];
-//  //console.log(repos.length);
-//
-//  //test_repo = repos[0];
-//  //collab = await getCollaboratorsFromRepoData(test_repo);
-//  //console.log(userInCollaborators(collab["data"], "abc"));
-//
-//  //filtered = await filterReposUserContribution(repos);
-//  //console.log(filtered.length);
-//
-//  totalRepos = await getRepositoriesFromOrganizations();
-//  console.log(totalRepos);
-//  totalRepos.forEach((repos) => console.log(repos.length));
+//  //  //res = await getOrganizations();
+//  //  //repos = res["data"][0]["repos_url"]["data"];
+//  //  //console.log(repos.length);
+//  //
+//  //  //test_repo = repos[0];
+//  //  //collab = await getCollaboratorsFromRepoData(test_repo);
+//  //  //console.log(userInCollaborators(collab["data"], "abc"));
+//  //
+//  //  //filtered = await filterReposUserContribution(repos);
+//  //  //console.log(filtered.length);
+//  //
+//  //  totalRepos = await getRepositoriesFromOrganizations();
+//  //  console.log(totalRepos);
+//  //  totalRepos.forEach((repos) => console.log(repos.length));
+//  //
+//  repos = await getAllRepositories();
+//  console.log(repos.length);
+//  filtered = await filterReposUserContribution(repos);
+//  console.log(filtered.length);
 //})();
 
 module.exports = {
@@ -100,4 +116,6 @@ module.exports = {
   setAuthToken,
   getRepositories,
   getRepositoriesFromOrganizations,
+  getAllRepositories,
+  filterReposUserContribution,
 };

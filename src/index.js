@@ -1,11 +1,8 @@
 #!/usr/bin/env node
 const { logger, transports } = require("./logger");
 const Commander = require("commander");
-const {
-  getRepositoryList,
-  getRepositoryListFromOrganizations,
-} = require("./scripts/download-data");
-const { uploadTableFromObjectList } = require("./scripts/upload-data");
+const { getAllRepositoryList } = require("./scripts/download-data");
+const { uploadTableFromObject } = require("./scripts/upload-data");
 const { setSpreadSheetId, setAuthKeyFile } = require("./gsheet");
 const packageJson = require("../package.json");
 const { setUserName, setAuthToken } = require("./github");
@@ -134,15 +131,11 @@ async function run() {
       throw new Error("Not GitHub token specified");
     }
 
-    logger.info("Obtaining own repositories");
-    const own = await getRepositoryList();
+    logger.info("Obtaining GitHub repositories, the user has access");
+    const repos = await getAllRepositoryList();
 
-    logger.info("Obtaining repositories from organizations");
-    const org = await getRepositoryListFromOrganizations();
-
-    const total = [own].concat(org);
     logger.info("Uploading repositories list to Google Sheet");
-    await uploadTableFromObjectList(total, "github");
+    await uploadTableFromObject(repos, "github");
   }
 
   logger.info("Task finished sucessfully");
