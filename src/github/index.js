@@ -1,4 +1,4 @@
-const { Octokit, App } = require("octokit");
+const { Octokit } = require("octokit");
 const config = require("../config");
 
 let octokit = new Octokit({ auth: config.services.github.authToken });
@@ -41,10 +41,7 @@ async function getOrganizations(populate = ["repos_url"]) {
   return rest;
 }
 
-async function getRepositoriesFromOrganizations(
-  withUserContribution = true,
-  user = userName
-) {
+async function getRepositoriesFromOrganizations(withUserContribution = true) {
   const response = await getOrganizations(["repos_url"]);
   let listRepos = response["data"].map((element) => {
     return element["repos_url"]["data"];
@@ -70,7 +67,7 @@ function userInCollaborators(collaborators, user = userName) {
   return data != null && data.length > 0;
 }
 
-async function filterReposUserContribution(listRepos, user = userName) {
+async function filterReposUserContribution(listRepos) {
   const result = await Promise.all(
     listRepos.map(async (repoData) => {
       collaboratorsResponse = await getCollaboratorsFromRepoData(repoData);

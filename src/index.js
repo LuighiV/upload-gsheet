@@ -8,6 +8,7 @@ const {
 const { uploadTableFromObjectList } = require("./scripts/upload-data");
 const { setSpreadSheetId, setAuthKeyFile } = require("./gsheet");
 const packageJson = require("../package.json");
+const { setUserName, setAuthToken } = require("./github");
 const config = require("./config");
 const fs = require("fs");
 
@@ -46,6 +47,22 @@ const program = new Commander.Command(packageJson.name)
   The available option is: github
 `
   )
+  .option(
+    "--github-username <username>",
+    `
+
+  Specify the GitHub username to obtain information about repositories. 
+  Used when --service is github.
+`
+  )
+  .option(
+    "--github-token <token>",
+    `
+
+  Specify the GitHub Token to obtain information. 
+  Used when --service is github.
+`
+  )
   .allowUnknownOption()
   .parse(process.argv);
 
@@ -76,7 +93,7 @@ async function run() {
         "Auth file %s doesn't exist in directory",
         config.google.keyFile
       );
-      return;
+      throw new Error("Not auth file found");
     }
   } catch (err) {
     console.error(err);
@@ -88,7 +105,7 @@ async function run() {
     logger.error(
       "Spreadsheet ID is required, not provided either by an option or environmental variable."
     );
-    return;
+    throw new Error("Not spreadsheet ID specified");
   }
 
   if (options.service == null) {
@@ -102,13 +119,32 @@ async function run() {
   }
 
   if (options.service === "github") {
-    logger.notice("Obtaining own repositories");
+    if (options.githubUsername) {
+      setUserName(options.githubUsername);
+    } else if (!process.env.GITHUB_USERNAME) {
+      logger.error(
+        "GitHub username is required, not provided either by an option or environmental variable."
+      );
+      throw new Error("Not GitHub username specified");
+    }
+
+    if (options.githubToken) {
+      setAuthToken(options.githubToken);
+    } else if (!process.env.GITHUB_TOKEN) {
+      logger.error(
+        "GitHub token is required, not provided either by an option or environmental variable."
+      );
+      throw new Error("Not GitHub token specified");
+    }
+
+    logger.info("Obtaining own repositories");
     const own = await getRepositoryList();
-    logger.notice("Obtaining repositories from organizations");
+
+    logger.info("Obtaining repositories from organizations");
     const org = await getRepositoryListFromOrganizations();
 
     const total = [own].concat(org);
-    logger.notice("Uploading repositories list to Google Sheet");
+    logger.info("Uploading repositories list to Google Sheet");
     await uploadTableFromObjectList(total, "github");
   }
 
