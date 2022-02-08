@@ -10,6 +10,7 @@ const { setSpreadSheetId, setAuthKeyFile } = require("./gsheet");
 const packageJson = require("../package.json");
 const { setUserName, setAuthToken } = require("./github");
 const config = require("./config");
+const err = require("./error");
 const fs = require("fs");
 
 const program = new Commander.Command(packageJson.name)
@@ -87,16 +88,12 @@ async function run() {
   }
 
   //Check if key file exists
-  try {
-    if (!fs.existsSync(keyFile)) {
-      logger.error(
-        "Auth file %s doesn't exist in directory",
-        config.google.keyFile
-      );
-      throw new Error("Not auth file found");
-    }
-  } catch (err) {
-    console.error(err);
+  if (!fs.existsSync(keyFile)) {
+    logger.error(
+      "Auth file %s doesn't exist in directory",
+      config.google.keyFile
+    );
+    throw new err.OptionError("Not auth file found.");
   }
 
   if (options.sheetId) {
@@ -105,17 +102,17 @@ async function run() {
     logger.error(
       "Spreadsheet ID is required, not provided either by an option or environmental variable."
     );
-    throw new Error("Not spreadsheet ID specified");
+    throw new err.OptionError("Not spreadsheet ID specified");
   }
 
   if (options.service == null) {
     logger.error("You must specify a service name");
-    throw new Error("Service name not specified");
+    throw new err.OptionError("Service name not specified");
   }
 
   if (!Object.keys(config.services).includes(options.service)) {
     logger.error(`Specified service ${options.service} not configured`);
-    throw new Error("Service not implemented");
+    throw new err.OptionError("Service not implemented");
   }
 
   if (options.service === "github") {
@@ -125,7 +122,7 @@ async function run() {
       logger.error(
         "GitHub username is required, not provided either by an option or environmental variable."
       );
-      throw new Error("Not GitHub username specified");
+      throw new err.OptionError("Not GitHub username specified");
     }
 
     if (options.githubToken) {
@@ -148,13 +145,14 @@ async function run() {
     await uploadTableFromObjectList(total, "github");
   }
 
+  logger.info("Task finished sucessfully");
   return;
 }
 
 run().catch(async (reason) => {
   logger.error("Aborting execution.");
-  if (reason.command) {
-    logger.error(`${reason.command} has failed.`);
+  if (reason.name) {
+    logger.error(`${reason.name}: ${reason.message}`);
   } else {
     logger.error("Unexpected error. Please report it as a bug:");
     logger.error("%O", reason);
