@@ -5,7 +5,8 @@ const { getAllRepositoryList } = require("./scripts/download-data");
 const { uploadTableFromObject } = require("./scripts/upload-data");
 const { setSpreadSheetId, setAuthKeyFile } = require("./gsheet");
 const packageJson = require("../package.json");
-const { setUserName, setAuthToken } = require("./github");
+const github = require("./github");
+const gitlab = require("./gitlab");
 const config = require("./config");
 const err = require("./error");
 const fs = require("fs");
@@ -61,6 +62,22 @@ const program = new Commander.Command(packageJson.name)
   Used when --service is github.
 `
   )
+  .option(
+    "--gitlab-username <username>",
+    `
+
+  Specify the GitLab username to obtain information about repositories. 
+  Used when --service is gitlab.
+`
+  )
+  .option(
+    "--gitlab-token <token>",
+    `
+
+  Specify the GitLab Token to obtain information. 
+  Used when --service is github.
+`
+  )
   .allowUnknownOption()
   .parse(process.argv);
 
@@ -112,30 +129,53 @@ async function run() {
     throw new err.OptionError("Service not implemented");
   }
 
-  if (options.service === "github") {
-    if (options.githubUsername) {
-      setUserName(options.githubUsername);
-    } else if (!process.env.GITHUB_USERNAME) {
+  const credentials = {
+    github: {
+      username: options.githubUsername || process.env.GITHUB_USERNAME,
+      token: options.githubToken || process.env.GITHUB_TOKEN,
+      setUserName: github.setUserName,
+      setAuthToken: github.setAuthToken,
+    },
+    gitlab: {
+      username: options.gitlabUsername || process.env.GITLAB_USERNAME,
+      token: options.gitlabToken || process.env.GITLAB_TOKEN,
+      setUserName: gitlab.setUserName,
+      setAuthToken: gitlab.setAuthToken,
+    },
+  };
+
+  const serviceInfo = config.services[options.service];
+
+  if (serviceInfo.type === "repository") {
+    const serviceCredentials = credentials[options.service];
+
+    if (serviceCredentials.username) {
+      serviceCredentials.setUserName(serviceCredentials.username);
+    } else {
       logger.error(
-        "GitHub username is required, not provided either by an option or environmental variable."
+        serviceInfo.name +
+          " username is required, not provided either by an option or environmental variable."
       );
-      throw new err.OptionError("Not GitHub username specified");
+      throw new err.OptionError(`Not ${serviceInfo.name} username specified`);
     }
 
-    if (options.githubToken) {
-      setAuthToken(options.githubToken);
-    } else if (!process.env.GITHUB_TOKEN) {
+    if (serviceCredentials.token) {
+      serviceCredentials.setAuthToken(serviceCredentials.token);
+    } else {
       logger.error(
-        "GitHub token is required, not provided either by an option or environmental variable."
+        serviceInfo.name +
+          " token is required, not provided either by an option or environmental variable."
       );
-      throw new Error("Not GitHub token specified");
+      throw new Error(`Not ${serviceInfo.name} token specified`);
     }
 
-    logger.info("Obtaining GitHub repositories, the user has access");
-    const repos = await getAllRepositoryList();
+    logger.info(
+      `Obtaining ${serviceInfo.name} repositories, the user has access`
+    );
+    const repos = await getAllRepositoryList(true, true, options.service);
 
     logger.info("Uploading repositories list to Google Sheet");
-    await uploadTableFromObject(repos, "github");
+    await uploadTableFromObject(repos, serviceInfo.defaultSheetName);
   }
 
   logger.info("Task finished sucessfully");

@@ -1,24 +1,37 @@
 const {
   getAllRepositories,
-  getRepositories,
   getRepositoriesFromOrganizations,
   filterReposUserContribution,
 } = require("../github");
+const { getProjects } = require("../gitlab");
 const { objectToList, keysToList, flatListItems } = require("../utils");
 const config = require("../config");
 const { logger } = require("../logger");
 
-async function getRepositoryList(flat = true) {
-  const data = await getRepositories();
-  return getRepositoryListFromObject(data["data"], flat);
-}
+async function getAllRepositoryList(
+  flat = true,
+  onlyContributed = true,
+  service = "github"
+) {
+  let repos = null;
+  switch (service) {
+    case "github":
+      repos = await getAllRepositories();
 
-async function getAllRepositoryList(flat = true, onlyContributed = true) {
-  let repos = await getAllRepositories();
+      break;
+    case "gitlab":
+      repos = await getProjects();
+      repos = repos["data"];
+
+      break;
+
+    default:
+      throw new Error("Not valid service");
+  }
 
   logger.info(`Total list of repositories has ${repos.length} items`);
 
-  if (onlyContributed) {
+  if (onlyContributed && service === "github") {
     logger.info("Selecting only repositories that have user contribution");
     repos = await filterReposUserContribution(repos);
 
@@ -27,11 +40,11 @@ async function getAllRepositoryList(flat = true, onlyContributed = true) {
     );
   }
 
-  return getRepositoryListFromObject(repos, flat);
+  return getRepositoryListFromObject(repos, flat, service);
 }
 
-function getRepositoryListFromObject(data, flat = true) {
-  const reference_keys = config.services.github.requests.repositories.keys;
+function getRepositoryListFromObject(data, flat = true, service = "github") {
+  const reference_keys = config.services[service].requests.repositories.keys;
   const list = objectToList(data, reference_keys);
   const keys = keysToList(reference_keys);
   return {
@@ -61,7 +74,6 @@ async function getRepositoriesFromOrganizationsListObject(list, flat = true) {
 //})();
 
 module.exports = {
-  getRepositoryList,
   getAllRepositoryList,
   getRepositoryListFromOrganizations,
 };

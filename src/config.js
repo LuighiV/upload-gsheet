@@ -8,6 +8,8 @@ const config = {
   },
   services: {
     github: {
+      type: "repository",
+      name: "GitHub",
       userName: process.env.GITHUB_USERNAME,
       authToken: process.env.GITHUB_TOKEN,
       defaultSheetName: "github",
@@ -32,6 +34,35 @@ const config = {
             {
               root: "owner",
               keys: ["login", "id", "html_url"],
+            },
+          ],
+        },
+      },
+    },
+    gitlab: {
+      type: "repository",
+      name: "GitLab",
+      userName: process.env.GITLAB_USERNAME,
+      authToken: process.env.GITLAB_TOKEN,
+      defaultSheetName: "gitlab",
+      requests: {
+        repositories: {
+          keys: [
+            "id",
+            "name",
+            "path",
+            "path_with_namespace",
+            "visibility",
+            "description",
+            "web_url",
+            "mirror",
+            "star_count",
+            "forks_count",
+            "created_at",
+            "last_activity_at",
+            {
+              root: "namespace",
+              keys: ["id", "name", "kind", "web_url"],
             },
           ],
         },
